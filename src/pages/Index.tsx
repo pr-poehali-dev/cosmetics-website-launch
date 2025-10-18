@@ -3,10 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const services = [
     { icon: 'Sparkles', title: 'Чистка лица', description: 'Глубокое очищение и обновление кожи', price: 'от 3500 ₽' },
@@ -375,11 +378,58 @@ const Index = () => {
             <Card className="border-2 border-pink-100">
               <CardContent className="p-8">
                 <h3 className="text-2xl font-semibold mb-6">Записаться</h3>
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSubmitting(true);
+                  
+                  const formData = new FormData(e.currentTarget);
+                  const data = {
+                    name: formData.get('name') as string,
+                    phone: formData.get('phone') as string,
+                    service: formData.get('service') as string,
+                    comment: formData.get('comment') as string,
+                  };
+                  
+                  try {
+                    const response = await fetch('https://functions.poehali.dev/30bad2d7-0263-4310-acd4-fc68d53ba68c', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify(data),
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                      toast({
+                        title: '✨ Заявка отправлена!',
+                        description: 'Мы свяжемся с вами в ближайшее время',
+                      });
+                      e.currentTarget.reset();
+                    } else {
+                      toast({
+                        title: '❌ Ошибка',
+                        description: result.error || 'Не удалось отправить заявку',
+                        variant: 'destructive',
+                      });
+                    }
+                  } catch (error) {
+                    toast({
+                      title: '❌ Ошибка',
+                      description: 'Проверьте подключение к интернету',
+                      variant: 'destructive',
+                    });
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}>
                   <div>
                     <label className="block text-sm font-medium mb-2">Ваше имя</label>
                     <input 
-                      type="text" 
+                      type="text"
+                      name="name"
+                      required
                       className="w-full px-4 py-3 rounded-xl border-2 border-pink-100 focus:border-primary focus:outline-none transition-colors"
                       placeholder="Анна"
                     />
@@ -387,14 +437,19 @@ const Index = () => {
                   <div>
                     <label className="block text-sm font-medium mb-2">Телефон</label>
                     <input 
-                      type="tel" 
+                      type="tel"
+                      name="phone"
+                      required
                       className="w-full px-4 py-3 rounded-xl border-2 border-pink-100 focus:border-primary focus:outline-none transition-colors"
                       placeholder="+7 (999) 123-45-67"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Услуга</label>
-                    <select className="w-full px-4 py-3 rounded-xl border-2 border-pink-100 focus:border-primary focus:outline-none transition-colors">
+                    <select 
+                      name="service"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-pink-100 focus:border-primary focus:outline-none transition-colors"
+                    >
                       <option>Выберите услугу</option>
                       {services.map((service, idx) => (
                         <option key={idx}>{service.title}</option>
@@ -403,15 +458,29 @@ const Index = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Комментарий</label>
-                    <textarea 
+                    <textarea
+                      name="comment"
                       className="w-full px-4 py-3 rounded-xl border-2 border-pink-100 focus:border-primary focus:outline-none transition-colors resize-none"
                       rows={3}
                       placeholder="Ваши пожелания..."
                     />
                   </div>
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-lg py-6">
-                    <Icon name="Calendar" size={20} className="mr-2" />
-                    Отправить заявку
+                  <Button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                        Отправка...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Calendar" size={20} className="mr-2" />
+                        Отправить заявку
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>

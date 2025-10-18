@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Test booking submission with valid data",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Анна Иванова",
+        "phone": "+7 (999) 123-45-67",
+        "service": "Чистка лица",
+        "comment": "Хочу записаться на следующую неделю"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test booking submission without required fields",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "service": "Мезотерапия"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
